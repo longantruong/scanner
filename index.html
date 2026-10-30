@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Local Barcode Scanner</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="js/scanner.js"></script>
+    <script defer src="js/storage.js"></script>
+    <script defer src="js/csv.js"></script>
+    <script defer src="js/app.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="brand"><span class="logo" aria-hidden="true">▥</span>
+            <div>
+                <h1>Local Barcode Scanner</h1>
+                <p>YOUR OFFLINE SCANNING WORKSPACE</p>
+            </div>
+        </div>
+        <div class="header-right"><span class="offline">● Offline · Local only</span><time id="clock"></time></div>
+    </header>
+    <main>
+        <div class="intro">
+            <div><span class="eyebrow">CAPTURE / ORGANIZE / EXPORT</span>
+                <h2>Every scan, accounted for.</h2>
+                <p>Connect your keyboard-wedge scanner and start capturing.</p>
+            </div><button id="focus" class="primary">◎ Focus Scanner</button>
+        </div>
+        <div id="storage-error" class="alert" role="alert" hidden></div>
+        <div id="notice" class="notice" role="status" hidden></div>
+        <div class="workspace">
+            <section class="capture card">
+                <div class="section-title">
+                    <h3>Scanner workspace</h3><span id="ready" class="badge">Input not focused</span>
+                </div><label for="capture">Scan capture</label><textarea id="capture" rows="2" spellcheck="false"
+                    autocapitalize="off" autocomplete="off" placeholder="Click here, then scan a barcode…"
+                    aria-describedby="capture-help"></textarea>
+                <div class="capture-bottom"><small id="capture-help">Waiting for Enter suffix</small><button
+                        id="complete">Complete input</button></div>
+                <p class="hint">Readiness means input focus, not a physical device connection. Keyboard input cannot
+                    reliably distinguish a scanner from human typing.</p>
+                <div class="latest">
+                    <div class="section-title"><span class="eyebrow">LATEST SCAN</span><span id="success"
+                            class="success" hidden>✓ Captured</span></div>
+                    <div id="latest-value" class="latest-value">Ready for your first scan</div>
+                    <div class="section-title"><time id="latest-time">Your scanned value will appear here.</time><button
+                            id="copy-latest" disabled>Copy value</button></div>
+                </div>
+            </section>
+            <aside class="card settings" style="display: none !important;">
+                <div class="section-title">
+                    <h3>Capture settings</h3><span aria-hidden="true">⚙</span>
+                </div><label for="mode">Completion mode</label><select id="mode">
+                    <option value="enter">Enter suffix</option>
+                    <option value="tab">Tab suffix</option>
+                    <option value="timeout">Inactivity timeout</option>
+                </select><label for="timeout">Inactivity timeout <span class="muted">(50–1000 ms)</span></label><input
+                    id="timeout" type="number" min="50" max="1000" step="1" value="150">
+                <p class="hint">Timeout requires a pause between scans. Enter or Tab is recommended for rapid scanning.
+                </p><label class="toggle"><span>Scan sound</span><input id="sound" type="checkbox"></label><label
+                    class="toggle"><span>Highlight duplicates</span><input id="highlight" type="checkbox"></label><label
+                    class="toggle"><span>Remember scan history</span><input id="persist" type="checkbox"></label><button
+                    id="defaults" class="full">Restore default settings</button>
+            </aside>
+        </div>
+        <section class="stats" aria-label="Scan statistics">
+            <div class="card"><span>Total scans</span><strong id="total">0</strong><small>Records in this
+                    workspace</small></div>
+            <div class="card"><span>Unique codes</span><strong id="unique">0</strong><small>Distinct captured
+                    values</small></div>
+            <div class="card"><span>Duplicates</span><strong id="duplicates">0</strong><small>Repeated values in
+                    history</small></div>
+        </section>
+        <section class="card history">
+            <div class="section-title">
+                <div>
+                    <h3>Scan history</h3>
+                    <p class="muted">Latest first. Your data stays in this browser.</p>
+                </div>
+                <div class="actions"><button id="clear" class="danger">Clear history</button><button id="export"
+                        class="primary">↓ Export CSV</button></div>
+            </div>
+            <div class="search-row"><label class="search-label" for="search">Search history</label><input id="search"
+                    type="search" placeholder="Search barcode or QR content…"><span id="results" class="muted"></span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Barcode / QR value</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history"></tbody>
+                </table>
+            </div>
+            <div id="empty" class="empty">No scans yet.<br><small>Your next scan starts the story.</small></div><button
+                id="more" hidden>Show 100 more</button>
+            <p class="hint">CSV uses UTF-8 and a protective apostrophe before each barcode. See README for Excel import
+                and exact-text handling.</p>
+        </section>
+        <details class="card manual">
+            <summary>Manual entry &amp; multiline QR text</summary>
+            <p class="hint">Use this field for manual entry or text containing line breaks. Enter adds a new line; Add
+                record submits the full value.</p><label for="manual">Barcode or QR text</label><textarea id="manual"
+                rows="3" spellcheck="false"></textarea><button id="add-manual">Add record</button>
+        </details>
+        <footer>NO INSTALLATION. NO NETWORK. JUST SCAN.<span>File-based browser storage is best-effort. Export
+                regularly.</span></footer>
+    </main>
+</body>
+
+</html>
