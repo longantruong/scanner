@@ -49,6 +49,10 @@ class ScannerManager {
     const value = this.buffer;
     this.buffer = '';
     this.field.value = '';
+    if (!/^[0-9]{14}$/.test(value)) {
+      this.options.onNotice('Invalid scan. The code must contain exactly 14 digits. Please scan again.', 'error');
+      return;
+    }
     this.options.onScan(value);
 
     console.log("value :",value)

@@ -2,7 +2,11 @@
 (() => {
   const $ = id => document.getElementById(id);
   const defaults = {mode:'enter', timeout:150, sound:true, highlight:true, persist:true};
-  const notice = message => { $('notice').textContent = message; $('notice').hidden = false; };
+  const notice = (message, type = 'info') => {
+    $('notice').textContent = message;
+    $('notice').classList.toggle('notice-error', type === 'error');
+    $('notice').hidden = false;
+  };
   const storage = new ScannerStorage(message => { $('storage-error').textContent = message; $('storage-error').hidden = false; });
   const saved = storage.read('settings', {});
   const settings = {...defaults};

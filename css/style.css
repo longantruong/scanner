@@ -453,6 +453,11 @@ footer span {
     color: #315c47
 }
 
+.notice.notice-error {
+    background: #fef2f2;
+    color: #b91c1c
+}
+
 [hidden] {
     display: none !important
 }

@@ -10,25 +10,36 @@
   const input = value => { field.value = value; field.dispatchEvent(new Event('input')); };
   const key = (name, extra = {}) => { const event = new Event('keydown', {cancelable:true}); Object.assign(event,{key:name,...extra}); field.dispatchEvent(event); return event; };
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-  await test('EAN-13, leading zeros, alphanumeric, single character and whitespace', () => {
+  await test('Exactly 14 digits are accepted with leading zeros preserved', () => {
     configure('enter');
-    ['4549292144567','000123','ABC-123','1','  A  '].forEach(value => { input(value); key('Enter'); assert(scans.at(-1) === value,'Value changed'); assert(field.value === '', 'Buffer not reset'); });
+    ['45492921445670','00000000000123'].forEach(value => { input(value); key('Enter'); assert(scans.at(-1) === value,'Value changed'); assert(field.value === '', 'Buffer not reset'); });
+  });
+  await test('Invalid scans require a rescan and reset the buffer', () => {
+    const start = scans.length;
+    ['4549292144567','123456789012345','ABC12345678901',' 1234567890123','１２３４５６７８９０１２３４','12345678901234\n'].forEach(value => {
+      const before = notices.length;
+      input(value); key('Enter');
+      assert(scans.length === start, 'Invalid scan accepted');
+      assert(field.value === '' && scanner.buffer === '', 'Invalid buffer not reset');
+      assert(notices.length === before+1 && notices.at(-1).includes('scan again'), 'Rescan notice missing');
+    });
+    input('12345678901234'); key('Enter');
+    assert(scans.length === start+1, 'Valid rescan missing');
   });
   await test('Twenty rapid consecutive scans and repeated values', () => {
     const start = scans.length;
-    for (let i=0;i<20;i++) { input('000'+i); key('Enter'); }
-    input('ABC'); key('Enter'); input('ABC'); key('Enter');
+    for (let i=0;i<20;i++) { input(String(i).padStart(14,'0')); key('Enter'); }
+    input('12345678901234'); key('Enter'); input('12345678901234'); key('Enter');
     assert(scans.length === start+22,'Missing or merged scan'); assert(scans.at(-1) === scans.at(-2),'Repeated scan lost');
   });
   await test('Empty and repeated suffix do not add records', () => { const start = scans.length; key('Enter'); key('Enter',{repeat:true}); assert(scans.length === start,'Empty scan accepted'); });
-  await test('Tab mode captures and prevents navigation', () => { configure('tab'); input('TAB'); assert(key('Tab').defaultPrevented,'Tab not prevented'); assert(scans.at(-1) === 'TAB','Tab scan missing'); });
+  await test('Tab mode captures and prevents navigation', () => { configure('tab'); input('12345678901234'); assert(key('Tab').defaultPrevented,'Tab not prevented'); assert(scans.at(-1) === '12345678901234','Tab scan missing'); });
   await test('Tab remains navigation in Enter mode', () => { configure('enter'); assert(!key('Tab').defaultPrevented,'Tab swallowed'); });
   await test('Browser shortcuts are not prevented', () => { input('ABC'); const start = scans.length; ['c','v','Enter','Tab'].forEach(k => assert(!key(k,{ctrlKey:true}).defaultPrevented,'Shortcut prevented')); assert(scans.length === start,'Shortcut submitted'); field.value=''; });
-  await test('Timeout submits once', async () => { configure('timeout'); const start = scans.length; input('TIME'); await delay(90); assert(scans.length === start+1,'Timeout missing'); key('Enter'); await delay(70); assert(scans.length === start+1,'Double completion'); });
-  await test('Suffix completes timeout early without a second event', async () => { const start=scans.length; input('FAST'); key('Tab'); await delay(90); assert(scans.length === start+1,'Duplicate event'); });
-  await test('Focus loss retains unfinished input and cancels timeout', async () => { input('PARTIAL'); const start=scans.length; field.dispatchEvent(new Event('blur')); await delay(90); assert(field.value === 'PARTIAL' && scans.length === start,'Partial input lost or submitted'); scanner.complete(); assert(scans.at(-1)==='PARTIAL','Cannot recover partial'); });
-  await test('IME composition waits until composition ends', async () => { field.dispatchEvent(new Event('compositionstart')); input('日本語'); const start=scans.length; await delay(90); assert(scans.length===start,'Composition submitted early'); field.dispatchEvent(new Event('compositionend')); await delay(90); assert(scans.at(-1)==='日本語','Composition result lost'); });
-  await test('QR content and long text are preserved', () => { configure('enter'); ['https://example.com/?a=1&b=2','<script>alert(1)</script>','日本語,"quote"\nline\tend','Q'.repeat(100000)].forEach(value => { input(value); key('Enter'); assert(scans.at(-1)===value,'QR text changed'); }); });
+  await test('Timeout submits once', async () => { configure('timeout'); const start = scans.length; input('12345678901234'); await delay(90); assert(scans.length === start+1,'Timeout missing'); key('Enter'); await delay(70); assert(scans.length === start+1,'Double completion'); });
+  await test('Suffix completes timeout early without a second event', async () => { const start=scans.length; input('23456789012345'); key('Tab'); await delay(90); assert(scans.length === start+1,'Duplicate event'); });
+  await test('Focus loss retains unfinished input and cancels timeout', async () => { input('34567890123456'); const start=scans.length; field.dispatchEvent(new Event('blur')); await delay(90); assert(field.value === '34567890123456' && scans.length === start,'Partial input lost or submitted'); scanner.complete(); assert(scans.at(-1)==='34567890123456','Cannot recover partial'); });
+  await test('IME composition waits until composition ends', async () => { field.dispatchEvent(new Event('compositionstart')); input('45678901234567'); const start=scans.length; await delay(90); assert(scans.length===start,'Composition submitted early'); field.dispatchEvent(new Event('compositionend')); await delay(90); assert(scans.at(-1)==='45678901234567','Composition result lost'); });
   await test('Unsupported keyboard key gives visible notice', () => { const start=notices.length; key('Unidentified'); assert(notices.length===start+1,'No notice'); });
   await test('CSV BOM, escaping, line breaks and formula protection', () => {
     const values=['000123','=1+1','+SUM(1,2)','-1','@SUM(A1)','\t=1','\r=1','日本語,"quote"\nnext'];
