@@ -99,7 +99,13 @@
     $('results').textContent = `${filtered.length} records`; $('more').hidden = filtered.length <= limit;
     $('export').disabled = !records.length; $('clear').disabled = !records.length;
   }
-  const scanner = new ScannerManager($('capture'), {onScan:add, onNotice:notice});
+  function handleScan(value) {
+    add(value);
+    sendBarcode(value).catch(error => {
+      notice(`Scan ${value} saved locally, but API submission failed (${error.message}). Check the server before scanning again.`, 'error');
+    });
+  }
+  const scanner = new ScannerManager($('capture'), {onScan:handleScan, onNotice:notice});
   function syncSettings() {
     $('mode').value = settings.mode; $('timeout').value = settings.timeout; $('timeout').disabled = settings.mode !== 'timeout';
     ['sound','highlight','persist'].forEach(key => { $(key).checked = settings[key]; });
